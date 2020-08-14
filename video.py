@@ -61,6 +61,8 @@ face_haar_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_f
 ap = argparse.ArgumentParser()
 ap.add_argument("-p", "--shape-predictor", required=True,
     help="path to facial landmark predictor")
+ap.add_argument("-u", "--name", required=True,
+    help="username")
 ap.add_argument("-v", "--video", type=str, default="",
     help="path to input video file")
 args = vars(ap.parse_args())
