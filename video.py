@@ -23,12 +23,13 @@ depressed=0
 not_depressed=0
 counter_frames=0
 
-EYE_AR_THRESH = 0.3
+EYE_AR_THRESH = 0.3#0.275
 EYE_AR_CONSEC_FRAMES = 3
 COUNTER = 0
 TOTAL = 0
 blink_rate=0
 blink_depression=0
+depression_rate=0
 
 #Method that return the EAR
 def eye_aspect_ratio(eye):
@@ -207,3 +208,11 @@ fps.stop()
 print("[INFO] elasped time:",clip_duration)
 #cap.release()
 cv2.destroyAllWindows
+firebase = firebase.FirebaseApplication('https://dirghayu-f1a14.firebaseio.com/', None)  
+data =  { 'Name': 'Udith',  
+          'Emotion_Percentage': depression_rate,  
+          'Blink_Percentage': blink_depression  
+          }  
+#data =  json.dumps({'Rate': depression_rate, 'Blink depression Rate': blink_depression})
+result = firebase.post('dirghayu-f1a14/Face/',data)  
+print(result)  
