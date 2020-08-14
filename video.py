@@ -66,7 +66,7 @@ ap.add_argument("-u", "--name", required=True,
 ap.add_argument("-v", "--video", type=str, default="",
     help="path to input video file")
 args = vars(ap.parse_args())
-
+uname=args["name"]
 # initialize dlib's face detector (HOG-based) and then create
 # the facial landmark predictor
 print("[INFO] loading facial landmark predictor...")
@@ -211,7 +211,7 @@ print("[INFO] elasped time:",clip_duration)
 #cap.release()
 cv2.destroyAllWindows
 firebase = firebase.FirebaseApplication('https://dirghayu-f1a14.firebaseio.com/', None)  
-data =  { 'Name': 'Udith',  
+data =  { 'Name': uname,  
           'Emotion_Percentage': depression_rate,  
           'Blink_Percentage': blink_depression  
           }  
