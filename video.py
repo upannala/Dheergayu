@@ -2,8 +2,10 @@
 # python detect_blinks.py --shape-predictor shape_predictor_68_face_landmarks.dat --video blink_detection_demo.mp4
 
 # Importing relevant packages and libraries
+import sys
 import os
 import cv2
+sys.path.append(os.environ['WORKSPACE'])
 import dlib
 import numpy as np
 import argparse
