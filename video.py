@@ -5,7 +5,7 @@
 import sys
 import os
 import cv2
-sys.path.append(os.environ['WORKSPACE'])
+from firebase import firebase 
 import dlib
 import numpy as np
 import argparse
