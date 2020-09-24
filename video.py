@@ -2,28 +2,35 @@
 # python detect_blinks.py --shape-predictor shape_predictor_68_face_landmarks.dat --video blink_detection_demo.mp4
 
 # Importing relevant packages and libraries
-import sys
 import os
 import cv2
-from firebase import firebase 
 import dlib
 import numpy as np
 import argparse
 import time
 import imutils
+import shlex
+import subprocess
 from imutils.video import FileVideoStream
 from imutils.video import VideoStream
 from imutils import face_utils
 from imutils.video import FPS
+from imutils.face_utils import FaceAligner
+from imutils.face_utils import rect_to_bb
 from keras.models import model_from_json
 from keras.preprocessing import image
 from scipy.spatial import distance as dist
 from moviepy.editor import VideoFileClip
+from moviepy.editor import *
+import skvideo.io
+from firebase import firebase
+import json
 
 # Variables used to calculate depression rate
 depressed=0
 not_depressed=0
 counter_frames=0
+depression_rate=0
 
 EYE_AR_THRESH = 0.3#0.275
 EYE_AR_CONSEC_FRAMES = 3
@@ -31,7 +38,6 @@ COUNTER = 0
 TOTAL = 0
 blink_rate=0
 blink_depression=0
-depression_rate=0
 
 #Method that return the EAR
 def eye_aspect_ratio(eye):
@@ -63,12 +69,10 @@ face_haar_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_f
 ap = argparse.ArgumentParser()
 ap.add_argument("-p", "--shape-predictor", required=True,
     help="path to facial landmark predictor")
-ap.add_argument("-u", "--name", required=True,
-    help="username")
 ap.add_argument("-v", "--video", type=str, default="",
     help="path to input video file")
 args = vars(ap.parse_args())
-uname=args["name"]
+
 # initialize dlib's face detector (HOG-based) and then create
 # the facial landmark predictor
 print("[INFO] loading facial landmark predictor...")
@@ -82,6 +86,7 @@ predictor = dlib.shape_predictor(args["shape_predictor"])
 
 #cap=cv2.VideoCapture(0)
 # Taking the video
+
 cap=FileVideoStream(args["video"]).start()
 fps = FPS().start()
 fileStream = True
@@ -94,14 +99,24 @@ clip_duration=(clip.duration)
 while True: 
     if fileStream and not cap.more():
         break
-    test_img=cap.read()# captures frame and returns boolean value and captured image
+    before_rotate=cap.read()# captures frame and returns boolean value and captured image
+    
     #print("image==",test_img)
-    if test_img is None:
+    if before_rotate is None:
         print("Image is null ",test_img)
         break
     #if not ret:
      #   continue
-    test_img = imutils.resize(test_img, width=400)
+    #test_img = imutils.rotate_bound(before_rotate, -90)
+    
+    scale_percent = 50 # percent of original size
+    #print('Original Dimensions : ',test_img.shape)
+    #width = int(test_img.shape[1] * scale_percent / 100)
+    #height = int(test_img.shape[0] * scale_percent / 100)
+    #dim = (width, height)
+    #test_img = cv2.resize(test_img, dim, interpolation = cv2.INTER_AREA)
+    test_img = imutils.resize(before_rotate, width=450)
+    #print('Resized Dimensions : ',test_img.shape)
     gray_img= cv2.cvtColor(test_img, cv2.COLOR_BGR2GRAY)
 
     faces_detected = face_haar_cascade.detectMultiScale(gray_img, 1.32, 5)
@@ -137,14 +152,15 @@ while True:
             not_depressed = not_depressed + 1
         
         counter_frames=counter_frames+1
-        print("counter frames==",counter_frames)
+        #print("counter frames==",counter_frames)
         depression_rate=(100*depressed)/counter_frames
-        print("Not depressed==",not_depressed)
-        print("Depressed==",depressed)
+        #print("Not depressed==",not_depressed)
+        #print("Depressed==",depressed)
         print("Rate==",depression_rate)
    
         
     for rect in rects:
+        
         # determine the facial landmarks for the face region, then
         # convert the facial landmark (x, y)-coordinates to a NumPy
         # array
@@ -183,16 +199,16 @@ while True:
 
             # reset the eye frame counter
             COUNTER = 0
-        print("Blink Count==",TOTAL)
+        ##print("Blink Count==",TOTAL)
         
         # draw the total number of blinks on the frame along with
         # the computed eye aspect ratio for the frame
-        ##cv2.putText(frame, "Blinks: {}".format(TOTAL), (10, 30),
-        ##    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-        ##cv2.putText(frame, "EAR: {:.2f}".format(ear), (300, 30),
-        ##    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+        cv2.putText(test_img, "Blinks: {}".format(TOTAL), (10, 30),#
+            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)#
+        cv2.putText(test_img, "EAR: {:.2f}".format(ear), (300, 30),#
+            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)#
     resized_img = cv2.resize(test_img, (1000, 700))
-    #cv2.imshow('Facial emotion analysis ',resized_img)
+    cv2.imshow('Facial emotion analysis ',resized_img)#
 
 
     fps.update()
@@ -206,16 +222,19 @@ if blink_rate<10.5:
 elif blink_rate>32:
     blink_depression=((blink_rate-32)/32)*100
 print("Blink Rate==",blink_rate)
+#print("Height==",height)
+#print("Width==",width)
 print("Rate==",depression_rate)
 print("Blink depression Rate==",blink_depression)
 fps.stop()
 print("[INFO] elasped time:",clip_duration)
-#cap.release()
+##cap.release()#
 cv2.destroyAllWindows
+
 firebase = firebase.FirebaseApplication('https://dirghayu-f1a14.firebaseio.com/', None)  
-data =  { 'Name': uname,  
-          'Emotion_Percentage': depression_rate,  
-          'Blink_Percentage': blink_depression  
+data =  { 'Name': 'Udith',  
+          'RollNo': depression_rate,  
+          'Percentage': blink_depression  
           }  
 #data =  json.dumps({'Rate': depression_rate, 'Blink depression Rate': blink_depression})
 result = firebase.post('dirghayu-f1a14/Face/',data)  
